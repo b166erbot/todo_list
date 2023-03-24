@@ -11,14 +11,17 @@ class TodoList(Gtk.Window):
     def __init__(self):
         super().__init__(title = 'Todo List')
         
+        # box
         box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL, spacing = 2)
         self.add(box)
 
+        # scrolled window
         scrolled_window = Gtk.ScrolledWindow()
         box.add(scrolled_window)
         scrolled_window.set_min_content_width(400)
         scrolled_window.set_min_content_height(250)
 
+        # tree view
         tree_view = Gtk.TreeView()
         self._liststore = Gtk.ListStore(bool, str)
         tree_view.set_model(self._liststore)
@@ -37,16 +40,24 @@ class TodoList(Gtk.Window):
         tree_view.append_column(coluna1)
         scrolled_window.add_with_viewport(tree_view)
 
+        # seleção
         self._selecao = tree_view.get_selection()
 
+        # banco de dados
         banco = shelve.open('save.pkl')
         for item in banco.get('tarefas', []):
             self._liststore.append(item)
         
+        # botões
         self.botao_adicionar = Gtk.Button(label = 'adicionar')
         self.botao_remover = Gtk.Button(label = 'remover')
+        self.botao_mover_acima = Gtk.Button(label = 'mover acima')
+        self.botao_mover_abaixo = Gtk.Button(label = 'mover abaixo')
+        
+        # entry
         self.entry = Gtk.Entry()
         
+        # box entrada usuário
         box_entrada_usuario = Gtk.Box(
             orientation = Gtk.Orientation.HORIZONTAL,
             spacing = 2
@@ -54,6 +65,8 @@ class TodoList(Gtk.Window):
         box.add(box_entrada_usuario)
         box_entrada_usuario.add(self.botao_adicionar)
         box_entrada_usuario.add(self.botao_remover)
+        box_entrada_usuario.add(self.botao_mover_acima)
+        box_entrada_usuario.add(self.botao_mover_abaixo)
         box_entrada_usuario.add(self.entry)
 
         # conectando comandos
@@ -63,8 +76,9 @@ class TodoList(Gtk.Window):
         )
         render_cell_toggle.connect("toggled", self.botao_toggle_ativado)
         self.botao_remover.connect('clicked', self.botao_remover_clicado)
+        self.botao_mover_acima.connect('clicked', self.botao_mover_acima_clicado)
+        self.botao_mover_abaixo.connect('clicked', self.botao_mover_abaixo_clicado)
         self.entry.connect('activate', self.botao_adicionar_clicado)
-        
     
     def botao_adicionar_clicado(self, widget):
         texto = self.entry.get_text().strip()
@@ -79,6 +93,20 @@ class TodoList(Gtk.Window):
         data, item = self._selecao.get_selected()
         if all((data, item)):
             self._liststore.remove(item)
+    
+    def botao_mover_acima_clicado(self, widget):
+        liststore, treeiter = self._selecao.get_selected()
+        if all((liststore, treeiter)):
+            item = liststore[treeiter]
+            if item.previous:
+                self._liststore.move_before(treeiter, item.previous.iter)
+
+    def botao_mover_abaixo_clicado(self, widget):
+        liststore, treeiter = self._selecao.get_selected()
+        if all((liststore, treeiter)):
+            item = liststore[treeiter]
+            if item.next:
+                    self._liststore.move_after(treeiter, item.next.iter)
     
     def fechar_janela_clicado(self, *args):
         self.hide()
