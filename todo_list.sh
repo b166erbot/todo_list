@@ -1,2 +1,2 @@
 cd ~/python_scripts/todo_list
-python3 main.py
+poetry run python3 main.py
